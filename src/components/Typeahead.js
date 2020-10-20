@@ -2,9 +2,13 @@ import React, { useState } from "react";
 import data from "../data";
 import GlobalStyles from "./GlobalStyles";
 import styled from "styled-components";
+import Suggestion from "./Suggestion";
 
-const Typeahead = ({ suggestions, handleSelect }) => {
+const Typeahead = (props) => {
   const [term, setTerm] = useState("");
+  const [selectedSuggestion, setSelectedSuggestion] = useState(0);
+
+  const { suggestions, handleSelect, categories } = props;
 
   const matches = suggestions.filter((suggestion) => {
     const lowerCasedTitle = suggestion.title.toLowerCase();
@@ -13,8 +17,6 @@ const Typeahead = ({ suggestions, handleSelect }) => {
     const MoreThanTwo = term.length >= 2;
     return isIncluded && MoreThanTwo;
   });
-
-  console.log(matches);
 
   return (
     <Wrapper>
@@ -25,8 +27,26 @@ const Typeahead = ({ suggestions, handleSelect }) => {
           term={term}
           onChange={(ev) => setTerm(ev.target.value)}
           onKeyDown={(ev) => {
-            if (ev.key === "Enter") {
-              handleSelect(term);
+            switch (ev.key) {
+              case "Enter": {
+                handleSelect(matches[selectedSuggestion].title);
+
+                return;
+              }
+              case "ArrowUp": {
+                if (selectedSuggestion <= 0) {
+                  return;
+                }
+                setSelectedSuggestion(selectedSuggestion - 1);
+                return;
+              }
+              case "ArrowDown": {
+                if (selectedSuggestion >= matches.length - 1) {
+                  return;
+                }
+                setSelectedSuggestion(selectedSuggestion + 1);
+                return;
+              }
             }
           }}
         ></Input>
@@ -34,15 +54,23 @@ const Typeahead = ({ suggestions, handleSelect }) => {
       </Row>
       {term.length >= 2 && (
         <Suggestions>
-          {matches.map((match) => {
+          {matches.map((match, index) => {
+            const category = categories[match.categoryId];
+            const isSelected = index === selectedSuggestion;
+
             return (
               <Suggestion
+                key={match.id}
                 onClick={() => {
                   handleSelect(match.title);
                 }}
-              >
-                {match.title}
-              </Suggestion>
+                suggestion={match.title}
+                searchTerm={term}
+                category={category}
+                isSelected={isSelected}
+                setSelectedSuggestion={setSelectedSuggestion}
+                index={index}
+              />
             );
           })}
         </Suggestions>
@@ -54,6 +82,7 @@ const Typeahead = ({ suggestions, handleSelect }) => {
 const Wrapper = styled.div`
   margin: 3em;
   text-align: center;
+  width: auto;
 `;
 
 const Input = styled.input`
@@ -74,24 +103,14 @@ const ClearBtn = styled.button`
   border-radius: 4px;
 `;
 
-const Row = styled.div``;
+const Row = styled.div`
+  width: auto;
+`;
 
 const Suggestions = styled.ul`
   box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
-  position: absolute;
   width: auto;
-  left: 230px;
-  width: 20em;
   padding: 10px;
-`;
-
-const Suggestion = styled.li`
-  padding: 6px;
-
-  &:hover {
-    background-color: #fffbe6;
-  }
-  cursor: pointer;
 `;
 
 export default Typeahead;
